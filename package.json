@@ -1,9 +1,9 @@
 {
-  "name": "kafe",
+  "name": "kino_media",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js",
     "start": "node server.js"
   },
   "author": "",
@@ -11,6 +11,8 @@
   "description": "",
   "dependencies": {
     "dotenv": "^16.4.7",
-    "node-telegram-bot-api": "^0.66.0"
+    "node-telegram-bot-api": "^0.66.0",
+    "nodemon": "^3.1.9",
+    "pg": "^8.13.1"
   }
 }
