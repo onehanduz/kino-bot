@@ -5,6 +5,10 @@ const {
   isAdmin,
   loadAllCode,
   addCode,
+  addChannel,
+  getChannel,
+  deleteChannel,
+  deleteCode,
 } = require("./helper");
 const pool = require("./db");
 require("dotenv").config();
@@ -26,18 +30,11 @@ const bootstrap = () => {
       } else {
         const resp =
           "*⚠️Botdan foydalanish uchun\n ‼️Iltimos quyidagi kanallarga obuna bo'ling*";
+        const inline = await getChannel();
         bot.sendMessage(chatId, resp, {
           parse_mode: "Markdown",
           reply_markup: {
-            inline_keyboard: [
-              [{ text: "1-kanal", url: "https://t.me/+B_ogYKNZXMIxZDE6" }],
-              [
-                {
-                  text: "✅ Obuna bo'ldim",
-                  callback_data: "done",
-                },
-              ],
-            ],
+            inline_keyboard: inline,
           },
         });
       }
@@ -52,6 +49,37 @@ const bootstrap = () => {
         bot.sendMessage(element.telegram_id, text, {
           parse_mode: "Markdown",
         });
+      });
+    }
+  });
+  bot.onText(":c:", async (msg) => {
+    const chatId = msg.chat.id;
+    if (await isAdmin(chatId)) {
+      const code = msg.text.split(":")[2];
+      const link = msg.text.split(":")[3] + ":" + msg.text.split(":")[4];
+      await addChannel(code, link);
+      bot.sendMessage(chatId, "Qo'shildi", {
+        parse_mode: "Markdown",
+      });
+    }
+  });
+  bot.onText(":d:", async (msg) => {
+    const chatId = msg.chat.id;
+    if (await isAdmin(chatId)) {
+      const code = msg.text.split(":")[2];
+      await deleteChannel(code);
+      bot.sendMessage(chatId, "O'chirildi", {
+        parse_mode: "Markdown",
+      });
+    }
+  });
+  bot.onText(":o:", async (msg) => {
+    const chatId = msg.chat.id;
+    if (await isAdmin(chatId)) {
+      const code = msg.text.split(":")[2];
+      await deleteCode(code);
+      bot.sendMessage(chatId, "O'chirildi", {
+        parse_mode: "Markdown",
       });
     }
   });
@@ -82,7 +110,8 @@ const bootstrap = () => {
               resize_keyboard: true,
               one_time_keyboard: true,
               keyboard: [
-                ["Kino qo'shish"],
+                ["Kino qo'shish", "Kino o'chirish"],
+                ["Kanal qo'shish", "Kanal o'chirish"],
                 ["Xabar yuborish"],
                 ["Bot stastikasi"],
               ],
@@ -92,6 +121,30 @@ const bootstrap = () => {
       } else if (text == "Kino qo'shish" && (await isAdmin(chatId))) {
         const resp = "*Kino qo'shmoqchi bo'lsangiz*: `:k:kodi:msg_id`";
         bot.sendMessage(chatId, resp, {
+          parse_mode: "Markdown",
+        });
+      } else if (text == "Kino o'chirish" && (await isAdmin(chatId))) {
+        let channel = (await pool.query("SELECT * FROM code")).rows;
+        let respose = "*Kanal o'chirmoqchi bo'lsangiz*: `:o:kod idsi`";
+        for (const iterator of channel) {
+          respose = `${respose} \n ${iterator.id} - kod: ${iterator.code}`;
+        }
+        bot.sendMessage(chatId, respose, {
+          parse_mode: "Markdown",
+        });
+      } else if (text == "Kanal qo'shish" && (await isAdmin(chatId))) {
+        let resp =
+          "*Kanal qo'shmoqchi bo'lsangiz*: `:c:kanal idsi:kanal linki`";
+        bot.sendMessage(chatId, resp, {
+          parse_mode: "Markdown",
+        });
+      } else if (text == "Kanal o'chirish" && (await isAdmin(chatId))) {
+        let channel = (await pool.query("SELECT * FROM channels")).rows;
+        let respose = "*Kanal o'chirmoqchi bo'lsangiz*: `:d:kanal idsi`";
+        for (const iterator of channel) {
+          respose = `${respose} \n ${iterator.id} - [link](${iterator.link})`;
+        }
+        bot.sendMessage(chatId, respose, {
           parse_mode: "Markdown",
         });
       } else if (text == "Xabar yuborish" && (await isAdmin(chatId))) {
@@ -125,18 +178,11 @@ const bootstrap = () => {
       userChecker(chatId);
       const resp =
         "*⚠️Botdan foydalanish uchun\n ‼️Iltimos quyidagi kanallarga obuna bo'ling*";
+      const inline = await getChannel();
       bot.sendMessage(chatId, resp, {
         parse_mode: "Markdown",
         reply_markup: {
-          inline_keyboard: [
-            [{ text: "1-kanal", url: "https://t.me/+B_ogYKNZXMIxZDE6" }],
-            [
-              {
-                text: "✅ Obuna bo'ldim",
-                callback_data: "done",
-              },
-            ],
-          ],
+          inline_keyboard: inline,
         },
       });
     }

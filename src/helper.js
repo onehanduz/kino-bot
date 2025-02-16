@@ -1,13 +1,16 @@
 const pool = require("./db");
-const member1 = "-1002367043482";
 async function checker(bot, chatId) {
-  let getChatMember = await bot.getChatMember(member1, chatId);
-  let status = getChatMember.status;
-  if (status == "creator" || status == "member" || status == "admin") {
-    return true;
-  } else {
-    return false;
+  const member = (await pool.query("SELECT * FROM channels;")).rows;
+  let res = true;
+  for (const member1 of member) {
+    let getChatMember = await bot.getChatMember(member1.telegram_id, chatId);
+    let status = getChatMember.status;
+    if (status == "left" || status == "restricted" || status == "kicked") {
+      res = false;
+      return;
+    }
   }
+  return res;
 }
 
 async function userChecker(chatId) {
@@ -44,10 +47,47 @@ async function addCode(code, msg_id) {
   ]);
 }
 
+async function addChannel(code, link) {
+  const added = await pool.query(
+    "INSERT INTO channels VALUES(DEFAULT,$1, $2)",
+    [code, link]
+  );
+}
+
+async function deleteChannel(code) {
+  const deleted = await pool.query("DELETE FROM channels WHERE id =$1;", [
+    code,
+  ]);
+}
+
+async function deleteCode(code) {
+  const deleted = await pool.query("DELETE FROM code WHERE id =$1;", [code]);
+}
+async function getChannel(code, link) {
+  const channels = (await pool.query("SELECT * FROM channels")).rows;
+  let key = [];
+  let num = 1;
+  channels.forEach((channel) => {
+    key.push([{ text: num + "-kanal", url: channel.link }]);
+    num++;
+  });
+  key.push([
+    {
+      text: "✅ Obuna bo'ldim",
+      callback_data: "done",
+    },
+  ]);
+  return key;
+}
+
 module.exports = {
   checker,
   userChecker,
   isAdmin,
   loadAllCode,
   addCode,
+  addChannel,
+  getChannel,
+  deleteChannel,
+  deleteCode,
 };

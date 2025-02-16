@@ -12,3 +12,10 @@ CREATE TABLE code (
   created_at TIMESTAMP DEFAULT now()
 );
 
+CREATE TABLE channels (
+  id SERIAL PRIMARY KEY,
+  telegram_id VARCHAR (255),
+  link VARCHAR (255),
+  created_at TIMESTAMP DEFAULT now()
+);
+
